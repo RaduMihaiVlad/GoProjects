@@ -10,10 +10,7 @@ func generateRandomNumber() int {
 	return rand.Int()
 }
 
-func generatePrime(
-	done <- chan interface{},
-	random <- chan int,
-	N int) chan int {
+func generatePrime(done <- chan struct{}, random <- chan int, N int) chan int {
 
 		output := make(chan int)
 		go func() {
@@ -40,9 +37,7 @@ func generatePrime(
 		return output
 	}
 
-func generateNumbers(
-	done <-chan interface{},
-	values ...int) chan int {
+func generateNumbers(done <-chan struct{}, values ...int) chan int {
 		
 		valueChan := make(chan int)
 		
@@ -63,10 +58,7 @@ func generateNumbers(
 		return valueChan
 	}
 
-func generateNNumbers(
-	done <-chan interface{},
-	N int,
-	values ...int) chan int {
+func generateNNumbers(done <-chan struct{}, N int, values ...int) chan int {
 
 		valueChan := make(chan int)
 		
@@ -88,15 +80,13 @@ func generateNNumbers(
 		return valueChan
 }
 
-func fannIn(
-	done chan interface{},
-	channels ...chan int) chan int {
+func fannIn(done chan struct{}, channels ...chan int) chan int {
 		fannOut := make(chan int)
 		numChanClosed := 0
 		totalChan := len(channels)
 		for _, c := range channels {
-			go func() {
-				for value := range c {
+			go func(c1 chan int) {
+				for value := range c1 {
 					select {
 					case <- done:
 						return
@@ -108,7 +98,7 @@ func fannIn(
 				if numChanClosed == totalChan {
 					close(fannOut)
 				}
-			}()
+			}(c)
 		}
 		
 		return fannOut
@@ -128,7 +118,7 @@ func main() {
 	*/
 
 	start := time.Now()
-	done := make(chan interface{})
+	done := make(chan struct{})
 	defer close(done)
 
 	outChan1 := generatePrime(done, generateNNumbers(done, 2050, generateRandomNumber(), 
